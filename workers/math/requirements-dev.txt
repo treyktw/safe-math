@@ -1,0 +1,4 @@
+# Local test dependencies. The container installs the hash-pinned
+# requirements.lock instead.
+sympy==1.14.0
+pytest>=8

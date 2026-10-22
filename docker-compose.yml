@@ -1,0 +1,35 @@
+# Both Python workers. Neither needs network access beyond the published port,
+# and neither mounts anything from the host: renders stay in a named volume and
+# are copied out with `docker compose cp` (see README).
+services:
+  math:
+    build: ./workers/math
+    image: safe-math-worker:local
+    ports:
+      - "127.0.0.1:8079:8079"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    pids_limit: 128
+
+  manim:
+    build: ./workers/manim
+    image: safe-manim-worker:local
+    ports:
+      - "127.0.0.1:8083:8083"
+    environment:
+      # Leave empty to trust the network (single host). Set it to require
+      # `Authorization: Bearer <token>`; the Rust example reads MANIM_TOKEN too.
+      MANIM_TOKEN: ${MANIM_TOKEN:-}
+    volumes:
+      - renders:/media
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 2g
+    pids_limit: 256
+
+volumes:
+  renders:

@@ -1,0 +1,21 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Manim output when run on a host
+media/
+
+# Local renders copied out of the container
+/scene.*
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/

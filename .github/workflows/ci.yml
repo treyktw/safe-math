@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      # Worker round-trip tests skip themselves without WORKER_TESTS=1.
+      - run: cargo test --workspace
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r workers/math/requirements-dev.txt -r workers/manim/requirements.txt
+      - name: math worker
+        working-directory: workers/math
+        run: python -m pytest -q
+      - name: manim worker (Manim stubbed)
+        working-directory: workers/manim
+        run: python -m pytest -q
+
+  integration:
+    # Builds both worker images, brings them up, and runs the gated round trips.
+    runs-on: ubuntu-latest
+    needs: [rust, python]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: docker compose up -d --build --wait --wait-timeout 300
+      - run: WORKER_TESTS=1 cargo test --workspace --test worker_roundtrip
+      - run: cargo run -p engine-math --example solve -- "x^2 - 5x + 6 = 0"
+      - run: cargo run -p engine-manim --example render -- mp4
+      - if: always()
+        run: docker compose logs --no-color
+      - if: always()
+        run: docker compose down -v

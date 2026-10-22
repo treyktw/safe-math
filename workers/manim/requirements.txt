@@ -1,0 +1,6 @@
+# The container gets Manim from the manimcommunity/manim base image. These are
+# for running the tests on a host: everything except test_render.py works with
+# pytest alone, because the scene tests stub Manim out.
+pytest>=8
+# Optional, only for MANIM_RENDER_TESTS=1 (needs Cairo, Pango, ffmpeg and LaTeX):
+# manim==0.19.0
